@@ -223,3 +223,8 @@ test_directory/
 
 # Jupyter notebooks output
 .ipynb_checkpoints/
+
+# Test models and temporary files
+test_models/
+*.pkl
+*.pkl.gz
