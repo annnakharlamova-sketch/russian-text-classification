@@ -205,3 +205,21 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ============================================
+# OUR PROJECT SPECIFIC EXCLUSIONS
+# ============================================
+
+# Data directories
+data/
+processed_data/
+trained_models/
+results/
+
+# Temporary files
+test_directory/
+*.tmp
+*.log
+
+# Jupyter notebooks output
+.ipynb_checkpoints/
