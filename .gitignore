@@ -228,3 +228,22 @@ test_directory/
 test_models/
 *.pkl
 *.pkl.gz
+
+# Временные/тестовые скрипты
+check_taiga_structure.py
+commit_message.txt
+continue_preprocessing.py
+continue_preprocessing_fixed.py
+debug_preprocessing.py
+finish_preprocessing.py
+fix_data_issues.py
+fix_taiga_path.py
+process_taiga.py
+train_classical_models.py
+train_lstm_final.py
+
+# Другие временные файлы
+*.tmp
+test_*
+temp_*
+debug_*

@@ -1,68 +1,84 @@
-# Experiment configuration
 data:
   corpora:
-    rusentiment:
-      path: "data/rusentiment"
-      test_size: 0.2
-      val_size: 0.1
-      random_state: 42
     rureviews:
-      path: "data/rureviews"
+      path: data/rureviews
+      random_state: 42
       test_size: 0.2
       val_size: 0.1
+    rusentiment:
+      path: data/rusentiment
       random_state: 42
+      test_size: 0.2
+      val_size: 0.1
     taiga:
-      path: "data/taiga"
+      path: data/taiga_extracted
+      random_state: 42
       test_size: 0.2
       val_size: 0.1
-      random_state: 42
-
-preprocessing:
-  pipelines:
-    P0: ["clean_text", "lowercase"]
-    P1: ["clean_text", "lowercase", "remove_stopwords"]
-    P2: ["clean_text", "lowercase", "remove_stopwords", "stemming"]
-    P3: ["clean_text", "lowercase", "remove_stopwords", "lemmatization"]
-
+evaluation:
+  bootstrap_samples: 1000
+  confidence_interval: 0.95
+  cv_folds: 5
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1
+  random_state: 42
 models:
   classical:
     bow_logreg:
-      vectorizer:
-        ngram_range: [1, 2]
-        max_features: 10000
-        min_df: 5
       classifier:
-        solver: "lbfgs"
         max_iter: 1000
         random_state: 42
-    tfidf_svm:
+        solver: lbfgs
       vectorizer:
-        ngram_range: [1, 2]
-        max_features: 20000
-        min_df: 3
-        sublinear_tf: true
-        use_idf: true
-        norm: "l2"
+        max_features: 10000
+        min_df: 5
+        ngram_range:
+        - 1
+        - 2
+    tfidf_svm:
       classifier:
         C: 1.0
-        kernel: "linear"
+        kernel: linear
         random_state: 42
-
-evaluation:
-  metrics: ["accuracy", "precision", "recall", "f1"]
-  cv_folds: 5
-  random_state: 42
-  confidence_interval: 0.95
-  bootstrap_samples: 1000
-
+      vectorizer:
+        max_features: 20000
+        min_df: 3
+        ngram_range:
+        - 1
+        - 2
+        norm: l2
+        sublinear_tf: true
+        use_idf: true
 neural:
   lstm:
-    embedding_dim: 200
-    hidden_size: 128
+    batch_size: 32
     bidirectional: true
     dropout: 0.3
-    num_layers: 1
-    learning_rate: 0.001
-    batch_size: 32
+    embedding_dim: 200
     epochs: 10
+    hidden_size: 128
+    learning_rate: 0.001
     max_length: 128
+    num_layers: 1
+preprocessing:
+  pipelines:
+    P0:
+    - clean_text
+    - lowercase
+    P1:
+    - clean_text
+    - lowercase
+    - remove_stopwords
+    P2:
+    - clean_text
+    - lowercase
+    - remove_stopwords
+    - stemming
+    P3:
+    - clean_text
+    - lowercase
+    - remove_stopwords
+    - lemmatization
