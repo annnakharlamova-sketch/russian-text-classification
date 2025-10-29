@@ -214,7 +214,6 @@ __marimo__/
 data/
 processed_data/
 trained_models/
-results/
 
 # Temporary files
 test_directory/
@@ -225,7 +224,6 @@ test_directory/
 .ipynb_checkpoints/
 
 # Test models and temporary files
-test_models/
 *.pkl
 *.pkl.gz
 
@@ -247,3 +245,11 @@ train_lstm_final.py
 test_*
 temp_*
 debug_*
+
+# Дополнительные временные файлы
+check_and_clean.py
+check_taiga.py
+pd.py
+test_lstm.py
+test_lstm_fixed.py
+__pycache__/

@@ -1,0 +1,12 @@
+feat: complete research pipeline with neural networks and evaluation
+
+- Add full evaluation system with statistical tests and confidence intervals
+- Implement LSTM neural network with PyTorch integration  
+- Add preprocessing impact analysis with visualization
+- Create comprehensive experiment runner (run_experiments_final.py)
+- Enhance data preprocessing for multiple corpora support
+- Add neural models module with vocabulary building
+- Include multiple testing scripts for model validation
+- Update configuration for complete pipeline support
+- Add analysis tools for research results
+- Add data download and preparation utilities
