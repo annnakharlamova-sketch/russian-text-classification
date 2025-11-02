@@ -1,0 +1,14 @@
+pipeline:
+  name: "P0"
+  steps:
+    - clean_text
+    - lowercase
+  description: "Базовая очистка текста"
+  
+parameters:
+  clean_text:
+    remove_html: true
+    remove_numbers: true  
+    remove_punctuation: true
+    remove_extra_spaces: true
+  lowercase: true

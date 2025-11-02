@@ -1,0 +1,85 @@
+name: Russian Text Classification CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Разрешает ручной запуск
+
+env:
+  PYTHON_VERSION: '3.10'
+  DATASETS_CACHE: ${{ github.workspace }}/.cache/datasets
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name:  Checkout repository
+      uses: actions/checkout@v4
+      
+    - name:  Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name:  Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Дополнительные зависимости для тестов
+        pip install pytest pytest-cov requests
+        
+    - name:  Create test data structure
+      run: |
+        mkdir -p data/rureviews
+        mkdir -p data/rusentiment
+        mkdir -p data/taiga_extracted
+        mkdir -p processed_data
+        mkdir -p results/figures
+        mkdir -p results/tables
+        mkdir -p trained_models
+        
+        echo " Test directories created"
+        
+    - name:  Generate toy datasets
+      run: |
+        python scripts/create_toy_data.py
+        
+    - name:  Run smoke tests
+      run: |
+        python scripts/run_smoke_tests.py
+        
+    - name:  Run basic functionality tests
+      run: |
+        python -m pytest tests/ -v --cov=src --cov-report=xml
+        
+    - name:  Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  full-pipeline-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Только ручной запуск
+    
+    steps:
+    - name:  Checkout repository
+      uses: actions/checkout@v4
+      
+    - name:  Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name:  Install dependencies
+      run: |
+        pip install -r requirements.txt
+        
+    - name:  Run full pipeline on toy data
+      run: |
+        python scripts/run_full_pipeline_test.py

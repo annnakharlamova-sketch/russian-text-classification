@@ -1,0 +1,26 @@
+{
+  "release_version": "v1.0-article",
+  "preparation_date": "2025-11-02T14:26:01.166418",
+  "article_artifacts": {
+    "tables": [
+      "Таблица 1",
+      "Таблица 2",
+      "Таблица 3"
+    ],
+    "figures": [
+      "Рисунок 1",
+      "Рисунок 2",
+      "Рисунок 3"
+    ]
+  },
+  "reproducibility": {
+    "random_seed": 42,
+    "python_version": "3.10",
+    "dependencies": "requirements.txt"
+  },
+  "contents": {
+    "results_csv": "Результаты экспериментов (CSV)",
+    "figures": "Графики из статьи (PNG)",
+    "configs": "Конфигурационные файлы (YAML)"
+  }
+}

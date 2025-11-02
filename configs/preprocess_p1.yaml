@@ -1,0 +1,18 @@
+pipeline:
+  name: "P1" 
+  steps:
+    - clean_text
+    - lowercase
+    - remove_stopwords
+  description: "Базовая очистка + удаление стоп-слов"
+
+parameters:
+  clean_text:
+    remove_html: true
+    remove_numbers: true
+    remove_punctuation: true
+    remove_extra_spaces: true
+  lowercase: true
+  remove_stopwords:
+    language: "russian"
+    custom_stopwords: []

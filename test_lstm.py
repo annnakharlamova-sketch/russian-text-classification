@@ -34,25 +34,25 @@ def main():
     y_test = [1, 0]
     
     # Создание и обучение модели
-    print("🔄 Создание LSTM модели...")
+    print(" Создание LSTM модели...")
     model = RealNeuralModel(config)
     
-    print("🎯 Обучение LSTM...")
+    print(" Обучение LSTM...")
     success = model.train_all_models(X_train, y_train)
     
     if success:
-        print("📊 Оценка LSTM...")
+        print(" Оценка LSTM...")
         metrics = model.evaluate_lstm('lstm', X_test, y_test)
         
         if metrics:
-            print("\n✅ LSTM тест завершен успешно!")
-            print("📋 Результаты:")
+            print("\n LSTM тест завершен успешно!")
+            print(" Результаты:")
             for metric, value in metrics.items():
                 print(f"   {metric}: {value:.4f}")
         else:
-            print("❌ Ошибка оценки LSTM")
+            print(" Ошибка оценки LSTM")
     else:
-        print("❌ Ошибка обучения LSTM")
+        print(" Ошибка обучения LSTM")
 
 if __name__ == "__main__":
     main()

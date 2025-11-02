@@ -11,7 +11,47 @@ from sklearn.svm import LinearSVC
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import pandas as pd
+import yaml
+from pathlib import Path
 
+def load_model_config(model_name):
+    """
+    Загрузка конфигурации модели из YAML файла
+    
+    Args:
+        model_name: имя модели ('svm', 'logreg', 'lstm')
+    
+    Returns:
+        config: словарь с конфигурацией
+    """
+    config_path = Path(f"configs/model_{model_name}.yml")
+    if not config_path.exists():
+        print(f" Конфиг не найден: {config_path}, использую значения по умолчанию")
+        return get_default_config(model_name)
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+    
+    print(f" Загружена конфигурация: {model_name}")
+    return config
+
+def get_default_config(model_name):
+    """Конфигурация по умолчанию если файл не найден"""
+    defaults = {
+        'svm': {
+            'vectorizer': {'max_features': 20000, 'ngram_range': [1, 2], 'min_df': 3},
+            'classifier': {'C': 1.0, 'kernel': 'linear', 'random_state': 42}
+        },
+        'logreg': {
+            'vectorizer': {'max_features': 10000, 'ngram_range': [1, 2], 'min_df': 5},
+            'classifier': {'solver': 'lbfgs', 'max_iter': 1000, 'random_state': 42}
+        },
+        'lstm': {
+            'embedding_dim': 200, 'hidden_size': 128, 'dropout': 0.3,
+            'batch_size': 32, 'learning_rate': 0.001, 'epochs': 10
+        }
+    }
+    return defaults.get(model_name, {})
 
 class ClassicalModel:
     def __init__(self, config):

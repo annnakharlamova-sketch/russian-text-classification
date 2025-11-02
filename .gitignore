@@ -253,3 +253,28 @@ pd.py
 test_lstm.py
 test_lstm_fixed.py
 __pycache__/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Conda
+.env
+.conda/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data (не коммитить датасеты)
+data/
+!data/README.md  # только README можно коммитить
+
+# Results (можно коммитить только финальные)
+results/
+!results/figures/
+!results/tables/
+!results/*.csv

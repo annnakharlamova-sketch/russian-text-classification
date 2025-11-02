@@ -1,0 +1,21 @@
+pipeline:
+  name: "P2"
+  steps:
+    - clean_text
+    - lowercase  
+    - remove_stopwords
+    - stemming
+  description: "Базовая очистка + стемминг"
+
+parameters:
+  clean_text:
+    remove_html: true
+    remove_numbers: true
+    remove_punctuation: true  
+    remove_extra_spaces: true
+  lowercase: true
+  remove_stopwords:
+    language: "russian"
+  stemming:
+    language: "russian"
+    method: "pymorphy2"

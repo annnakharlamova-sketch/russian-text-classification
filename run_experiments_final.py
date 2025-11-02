@@ -11,7 +11,7 @@ import pandas as pd
 # Добавляем путь к src для импорта модулей
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from utils import load_config, print_config_summary, ensure_dir
+from utils import load_config, print_config_summary, ensure_dir, setup_reproducibility
 from data_preprocessing import DataPreprocessor
 from models import ClassicalModel, RealNeuralModel
 from evaluation import Evaluator
@@ -92,6 +92,29 @@ def run_complete_evaluation(config, classical_model, neural_model, X_test, y_tes
     
     return predictions_dict, None
 
+    def run_complete_evaluation(config, X_train, y_train, X_test, y_test, 
+                           dataset_name, model_name, preprocess_name):
+    	"""Полная оценка с CV и доверительными интервалами"""
+    	from evaluation import Evaluator
+    
+    	evaluator = Evaluator(config)
+    
+    	# 5-кратная стратифицированная CV
+    	cv_results, avg_metrics = evaluator.cross_validate_model(
+        	model, X_train, y_train, dataset_name, model_name, preprocess_name
+    )
+    
+    	# Оценка на тестовом наборе с доверительными интервалами
+    	y_pred = model.predict(X_test)
+    	test_result = evaluator.evaluate_with_confidence_intervals(
+        y_test, y_pred, dataset_name, model_name, preprocess_name
+    )
+    
+    # Сохранение результатов
+    	evaluator.save_results()
+    
+    	return test_result, cv_results
+
 
 def analyze_preprocessing_impact(config, processed_data):
     """Анализ влияния предобработки"""
@@ -122,9 +145,13 @@ def main():
     parser.add_argument('--evaluate', action='store_true', help='Только оценка')
     parser.add_argument('--analyze', action='store_true', help='Только анализ')
     parser.add_argument('--config', default='configs/experiment_config.yaml', help='Путь к конфигурации')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed (по умолчанию: 42)')
     
     args = parser.parse_args()
     
+    print(f"Установка random seed: {args.seed}")
+    setup_reproducibility(args.seed)
+
     # Если не указаны аргументы, показываем помощь
     if not any([args.all, args.preprocess, args.classical, args.neural, args.evaluate, args.analyze]):
         print("  Использование: python run_experiments_final.py --all")

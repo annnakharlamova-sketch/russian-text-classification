@@ -1,5 +1,5 @@
 """
-Исправленная версия нейросетевых моделей
+Нейросетевые модели
 """
 
 import torch
@@ -178,6 +178,113 @@ def test_fixed_neural():
     model = FixedNeuralModel(config)
     success = model.train_all_models(X_train, y_train)
     print(" Тест завершен!" if success else " Тест не пройден")
+
+def train_lstm_with_config(self, X_train, y_train):
+    """Обучение LSTM с конфигурацией из YAML"""
+    print(" Обучение LSTM с конфигурацией...")
+    
+    # Загрузка конфигурации
+    config = load_model_config('lstm')
+    arch_config = config['architecture']['parameters']
+    training_config = config['training']
+    
+    try:
+        # Подготовка данных
+        y_encoded = self.label_encoder.fit_transform(y_train)
+        num_classes = len(self.label_encoder.classes_)
+        
+        # Построение словаря
+        self.build_vocab(X_train)
+        vocab_size = len(self.vocab)
+        
+        # Создание датасета
+        dataset = TextDataset(
+            X_train, y_encoded, self.vocab, 
+            max_length=arch_config['max_length']
+        )
+        
+        dataloader = DataLoader(
+            dataset,
+            batch_size=training_config['batch_size'],
+            shuffle=True,
+            num_workers=0
+        )
+        
+        # Определение устройства
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"   Устройство: {device}")
+        
+        # Создание модели с параметрами из конфига
+        model = LSTMClassifier(
+            vocab_size=vocab_size,
+            embedding_dim=arch_config['embedding_dim'],
+            hidden_size=arch_config['hidden_size'],
+            num_classes=num_classes,
+            num_layers=arch_config['num_layers'],
+            bidirectional=arch_config['bidirectional'],
+            dropout=arch_config['dropout']
+        ).to(device)
+        
+        # Инициализация эмбеддингов
+        self._initialize_embeddings(model, config['embedding'])
+        
+        # Оптимизатор и функция потерь
+        optimizer_config = training_config['optimizer']['parameters']
+        optimizer = optim.Adam(
+            model.parameters(),
+            lr=optimizer_config['lr'],
+            weight_decay=optimizer_config['weight_decay']
+        )
+        
+        criterion = nn.CrossEntropyLoss()
+        
+        # Обучение
+        print("   Начало обучения...")
+        model.train()
+        
+        for epoch in range(training_config['epochs']):
+            total_loss = 0
+            
+            for batch in dataloader:
+                input_ids = batch['input_ids'].to(device)
+                labels = batch['label'].to(device)
+                
+                optimizer.zero_grad()
+                outputs = model(input_ids)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                
+                # Клиппинг градиентов
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), 
+                    training_config['gradient_clip']
+                )
+                
+                optimizer.step()
+                total_loss += loss.item()
+            
+            avg_loss = total_loss / len(dataloader)
+            print(f"   Эпоха {epoch+1}, Loss: {avg_loss:.4f}")
+        
+        self.models['lstm'] = model
+        print(" LSTM обучена успешно!")
+        return True
+        
+    except Exception as e:
+        print(f" Ошибка обучения LSTM: {e}")
+        return False
+
+def _initialize_embeddings(self, model, embedding_config):
+    """Инициализация эмбеддингов согласно конфигу"""
+    if embedding_config['initialization'] == 'uniform':
+        init_range = embedding_config['init_range']
+        model.embedding.weight.data.uniform_(-init_range, init_range)
+    
+    # Зануляем паддинг
+    model.embedding.weight.data[0].zero_()
+    
+    if embedding_config['freeze']:
+        model.embedding.weight.requires_grad = False
 
 if __name__ == "__main__":
     test_fixed_neural()
