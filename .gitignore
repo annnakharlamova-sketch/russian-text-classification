@@ -243,7 +243,6 @@ train_lstm_final.py
 
 # Другие временные файлы
 *.tmp
-test_*
 temp_*
 debug_*
 

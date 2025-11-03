@@ -1,0 +1,2 @@
+dataset,model,preprocess,seed,accuracy,accuracy_ci_lower,accuracy_ci_upper,precision_macro,recall_macro,f1_macro,f1_macro_ci_lower,f1_macro_ci_upper,samples_count
+test_dataset,test_model,P0,42,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,10
