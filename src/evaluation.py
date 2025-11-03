@@ -1,5 +1,5 @@
 """
-Модуль для оценки моделей с полным протоколом из статьи
+Модуль для оценки моделей с полным протоколом
 """
 
 import numpy as np
@@ -9,6 +9,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 from scipy import stats
 import time
 import os
+from pathlib import Path  
 from utils import get_global_seed
 
 
@@ -16,6 +17,7 @@ class Evaluator:
     def __init__(self, config):
         self.config = config
         self.results = []
+        self.cv_results = []  
         
     def bootstrap_ci(self, y_true, y_pred, metric_fn, n_bootstrap=1000, confidence=0.95):
         """
@@ -67,37 +69,37 @@ class Evaluator:
             'f1_weighted': f1_score(y_true, y_pred, average='weighted', zero_division=0)
         }
 
-	def save_predictions(self, y_true, y_pred, y_pred_proba, dataset_name, model_name, preprocess_name):
-    """
-    Сохранение предсказаний для построения графиков
+    def save_predictions(self, y_true, y_pred, y_pred_proba, dataset_name, model_name, preprocess_name):  
+        """
+        Сохранение предсказаний для построения графиков
+        
+        Args:
+            y_true: истинные метки
+            y_pred: предсказанные метки
+            y_pred_proba: вероятности предсказаний
+            dataset_name: название датасета
+            model_name: название модели
+            preprocess_name: название пайплайна
+        """
+        predictions_df = pd.DataFrame({
+            'dataset': [dataset_name] * len(y_true),
+            'model': [model_name] * len(y_true),
+            'preprocess': [preprocess_name] * len(y_true),
+            'y_true': y_true,
+            'y_pred': y_pred,
+            'y_pred_proba': y_pred_proba
+        })
+        
+        # Сохранение в файл
+        predictions_path = Path('results/model_predictions.csv')
+        if predictions_path.exists():
+            existing_df = pd.read_csv(predictions_path)
+            predictions_df = pd.concat([existing_df, predictions_df], ignore_index=True)
+        
+        predictions_df.to_csv(predictions_path, index=False)
+        print(f" Предсказания сохранены: {predictions_path}")
     
-    Args:
-        y_true: истинные метки
-        y_pred: предсказанные метки
-        y_pred_proba: вероятности предсказаний
-        dataset_name: название датасета
-        model_name: название модели
-        preprocess_name: название пайплайна
-    """
-    predictions_df = pd.DataFrame({
-        'dataset': [dataset_name] * len(y_true),
-        'model': [model_name] * len(y_true),
-        'preprocess': [preprocess_name] * len(y_true),
-        'y_true': y_true,
-        'y_pred': y_pred,
-        'y_pred_proba': y_pred_proba
-    })
-    
-    # Сохранение в файл
-    predictions_path = Path('results/model_predictions.csv')
-    if predictions_path.exists():
-        existing_df = pd.read_csv(predictions_path)
-        predictions_df = pd.concat([existing_df, predictions_df], ignore_index=True)
-    
-    predictions_df.to_csv(predictions_path, index=False)
-    print(f" Предсказания сохранены: {predictions_path}")
-    
-    def cross_validate_model(self, model, X, y, dataset_name, model_name, preprocess_name):
+    def cross_validate_model(self, model, X, y, dataset_name, model_name, preprocess_name):  
         """
         5-кратная стратифицированная кросс-валидация
         
@@ -127,8 +129,8 @@ class Evaluator:
         for fold, (train_idx, val_idx) in enumerate(kf.split(X, y)):
             start_time = time.time()
             
-            X_train, X_val = X[train_idx], X[val_idx]
-            y_train, y_val = y[train_idx], y[val_idx]
+            X_train, X_val = X[train_idx], X[val_idx]  
+            y_train, y_val = y[train_idx], y[val_idx]  
             
             # Обучение модели
             model.fit(X_train, y_train)
@@ -159,6 +161,9 @@ class Evaluator:
             fold_times.append(train_time)
             
             print(f"   Fold {fold + 1}: F1-macro = {metrics['f1_macro']:.4f}, Time = {train_time:.2f}s")
+        
+        # Сохраняем детальные результаты
+        self.cv_results.extend(fold_results)
         
         # Усреднение метрик по фолдам
         avg_metrics = self._aggregate_cv_results(fold_results)
