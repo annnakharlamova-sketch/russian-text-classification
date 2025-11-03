@@ -140,7 +140,7 @@ jobs:
                             result = evaluator.evaluate_with_confidence_intervals(
                                 y, metrics['predictions'], dataset_name, model_name, pipeline_name
                             )
-                            print(f'  {model_name}: F1={result[\\\"f1_macro\\\"]:.3f}')
+                            print(f'  {model_name}: F1={result["f1_macro"]:.3f}')
         
         print('✓ Experiments completed successfully')
         "
