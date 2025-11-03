@@ -6,6 +6,7 @@
 ```bash
 git tag v1.0-article
 git push origin v1.0-article
+```
 ### 2. Ручной запуск:
 Перейдите в репозитории на GitHub
 
@@ -18,6 +19,7 @@ git push origin v1.0-article
 ## Что создает workflow:
 ### Артефакты:
 research-artifacts-v1.0-article.zip - архив с результатами
+
 Автоматический релиз на GitHub
 
 ## Содержимое архива:
@@ -30,6 +32,7 @@ artifacts/
 ```
 ## Настройка:
 Изменение версии Python:
+
 Отредактируйте в .github/workflows/release.yml:
 
 ```yaml
