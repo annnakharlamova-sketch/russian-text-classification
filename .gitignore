@@ -1,4 +1,5 @@
 # Byte-compiled / optimized / DLL files
+*.pyc
 __pycache__/
 *.py[codz]
 *$py.class
@@ -278,3 +279,6 @@ results/
 !results/figures/
 !results/tables/
 !results/*.csv
+src/__pycache__/utils.cpython-310.pyc
+src/__pycache__/utils.cpython-310.pyc
+src/__pycache__/utils.cpython-310.pyc
