@@ -44,9 +44,41 @@ jobs:
         
         echo " Test directories created"
         
-    - name:  Generate toy datasets
+    - name: Create realistic test data
       run: |
-        python scripts/create_toy_data.py
+        # Создаем реалистичные тестовые CSV файлы
+        python -c "
+        import pandas as pd
+        import os
+        
+        # Создаем тестовый RuReviews
+        reviews_data = {
+            'text': [
+                'Отличный товар! Очень доволен покупкой.',
+                'Плохое качество, не рекомендую.',
+                'Нормально за свои деньги.',
+                'Прекрасный сервис и быстрая доставка!',
+                'Ужасное обслуживание, больше не обращусь.'
+            ],
+            'label': [1, 0, 1, 1, 0]
+        }
+        pd.DataFrame(reviews_data).to_csv('data/rureviews/reviews.csv', index=False)
+        
+        # Создаем тестовый RuSentiment
+        sentiment_data = {
+            'text': [
+                'Это просто прекрасно!',
+                'Ненавижу этот продукт.',
+                'Нормальный сервис.',
+                'Восхитительная работа!', 
+                'Ужасное качество.'
+            ],
+            'sentiment': [2, 0, 1, 2, 0]
+        }
+        pd.DataFrame(sentiment_data).to_csv('data/rusentiment/train.csv', index=False)
+        
+        print('Тестовые данные созданы')
+        "
         
     - name:  Run smoke tests
       run: |
