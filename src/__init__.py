@@ -12,7 +12,7 @@ from .utils import (
 )
 
 from .data_preprocessing import DataPreprocessor
-from .models import ClassicalModel, LSTMModel
+from .models import ClassicalModel, NeuralModel, RealNeuralModel
 from .evaluation import Evaluator
 
 __version__ = "1.0.0"
@@ -30,6 +30,7 @@ __all__ = [
     # Main classes
     'DataPreprocessor',
     'ClassicalModel', 
-    'LSTMModel',
+    'NeuralModel',
+    'RealNeuralModel',
     'Evaluator'
 ]
