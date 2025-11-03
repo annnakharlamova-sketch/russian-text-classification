@@ -10,7 +10,7 @@ from scipy import stats
 import time
 import os
 from pathlib import Path  
-from utils import get_global_seed
+from src.utils import get_global_seed
 
 
 class Evaluator:
@@ -57,6 +57,12 @@ class Evaluator:
         
         return mean_score, (lower, upper)
     
+    def bootstrap_confidence_interval(self, y_true, y_pred, metric_fn, n_bootstrap=1000, confidence=0.95):
+        """
+        Альтернативное название для обратной совместимости со smoke-тестами
+        """
+        return self.bootstrap_ci(y_true, y_pred, metric_fn, n_bootstrap, confidence)
+
     def calculate_metrics(self, y_true, y_pred):
         """Расчет всех метрик качества"""
         return {

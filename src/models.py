@@ -112,7 +112,6 @@ class ClassicalModel:
                 max_features=model_config['vectorizer']['max_features'],
                 min_df=model_config['vectorizer']['min_df'],
                 sublinear_tf=model_config['vectorizer']['sublinear_tf'],
-                use_idf=model_config['vectorizer']['use_idf'],
                 norm=model_config['vectorizer']['norm']
             )
             

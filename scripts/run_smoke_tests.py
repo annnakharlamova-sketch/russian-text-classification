@@ -6,33 +6,48 @@ Smoke-тесты для проверки работоспособности па
 import sys
 import os
 import pandas as pd
+from sklearn.metrics import f1_score
 
 # Добавляем путь к src
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
-from utils import load_config, ensure_dir
-from data_preprocessing import DataPreprocessor
-from models import ClassicalModel
-from evaluation import Evaluator
+# Импорты
+from src.utils import load_config, ensure_dir
+from src.data_preprocessing import DataPreprocessor  
+from src.models import ClassicalModel
+from src.evaluation import Evaluator
 
 def test_data_loading():
     """Тест загрузки данных"""
     print(" Тест загрузки данных...")
     
     try:
-        # Проверяем существование toy-датасетов
-        datasets = {
-            'rureviews': 'data/rureviews/reviews.csv',
-            'rusentiment': 'data/rusentiment/train.csv', 
-            'taiga': 'data/taiga_extracted/social/toy_social.csv'
-        }
+        config = load_config('configs/experiment_config.yaml')
+        preprocessor = DataPreprocessor(config)
         
-        for name, path in datasets.items():
-            if os.path.exists(path):
-                df = pd.read_csv(path)
-                print(f"    {name}: {len(df)} строк, {df.columns.tolist()}")
+        datasets = ['rureviews', 'rusentiment', 'taiga_social']
+        
+        for dataset_name in datasets:
+            if dataset_name == 'taiga_social':
+                # Для smoke-тестов используем ограниченный режим
+                data = preprocessor.load_taiga(
+                    config['data']['corpora']['taiga_social']['path'],
+                    max_sentences=1000,  # Только 1000 предложений
+                    skip_large_files=True  # Пропускаем большие файлы
+                )
+            elif dataset_name == 'rusentiment':
+                data = preprocessor.load_rusentiment(config['data']['corpora']['rusentiment']['path'])
+            elif dataset_name == 'rureviews':
+                data_path = config['data']['corpora']['rureviews']['path']
+                data_dir = os.path.dirname(data_path) if os.path.isfile(data_path) else data_path
+                print(f"    Загрузка RuReviews из: {data_dir}")
+                data = preprocessor.load_rureviews(data_dir)
+            
+            if data is not None and len(data) > 0:
+                print(f"    {dataset_name}: {len(data)} строк, {data.columns.tolist()}")
             else:
-                print(f"    {name}: файл не найден")
+                print(f"    {dataset_name}: данные не загружены")
                 return False
                 
         return True
@@ -135,7 +150,7 @@ def test_evaluation():
         # Тест доверительных интервалов
         mean_f1, ci = evaluator.bootstrap_confidence_interval(
             y_true, y_pred, 
-            lambda yt, yp: evaluator.calculate_metrics(yt, yp)['f1_macro']
+            lambda yt, yp: f1_score(yt, yp, average='macro', zero_division=0)  # Прямой вызов f1_score
         )
         print(f"    Доверительный интервал: {ci[0]:.3f}-{ci[1]:.3f}")
         
