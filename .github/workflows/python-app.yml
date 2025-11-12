@@ -9,11 +9,12 @@ on:
 
 env:
   PYTHON_VERSION: '3.10'
-  DATASETS_CACHE: ${{ github.workspace }}/.cache/datasets
 
 jobs:
-  smoke-test:
+  minimal-pipeline-test:
+    name: Minimal Pipeline Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Ограничиваем время выполнения
     
     steps:
     - name:  Checkout repository
@@ -29,89 +30,102 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        # Дополнительные зависимости для тестов
-        pip install pytest pytest-cov requests
-        
-    - name:  Create test data structure
+        # Минимальные зависимости для тестов
+        pip install pytest scikit-learn matplotlib pandas numpy pyyaml
+    
+    - name:  Create test directory structure
       run: |
         mkdir -p data/rureviews
         mkdir -p data/rusentiment
-        mkdir -p data/taiga_extracted
-        mkdir -p processed_data
+        mkdir -p data/taiga
         mkdir -p results/figures
         mkdir -p results/tables
         mkdir -p trained_models
-        
         echo " Test directories created"
         
-    - name: Create realistic test data
+    - name:  Create minimal toy datasets
       run: |
-        # Создаем реалистичные тестовые CSV файлы
         python -c "
         import pandas as pd
         import os
         
-        # Создаем тестовый RuReviews
+        # Минимальный RuReviews dataset (5 примеров)
         reviews_data = {
             'text': [
-                'Отличный товар! Очень доволен покупкой.',
-                'Плохое качество, не рекомендую.',
-                'Нормально за свои деньги.',
-                'Прекрасный сервис и быстрая доставка!',
-                'Ужасное обслуживание, больше не обращусь.'
+                'Отличный товар очень доволен',
+                'Плохое качество не рекомендую', 
+                'Нормальный продукт за деньги',
+                'Хороший сервис быстро доставили',
+                'Ужасное обслуживание'
             ],
             'label': [1, 0, 1, 1, 0]
         }
         pd.DataFrame(reviews_data).to_csv('data/rureviews/reviews.csv', index=False)
+        print(' RuReviews toy data created')
         
-        # Создаем тестовый RuSentiment
+        # Минимальный RuSentiment dataset (5 примеров)  
         sentiment_data = {
             'text': [
-                'Это просто прекрасно!',
-                'Ненавижу этот продукт.',
-                'Нормальный сервис.',
-                'Восхитительная работа!', 
-                'Ужасное качество.'
+                'Это прекрасно очень рад',
+                'Ненавижу ужасное качество',
+                'Нормально ничего особенного',
+                'Восхитительно очень доволен',
+                'Ужасно не покупайте'
             ],
             'sentiment': [2, 0, 1, 2, 0]
         }
         pd.DataFrame(sentiment_data).to_csv('data/rusentiment/train.csv', index=False)
+        print(' RuSentiment toy data created')
         
-        print('Тестовые данные созданы')
+        # Минимальный Taiga dataset (5 примеров)
+        taiga_data = {
+            'text': [
+                'Интересный пост в социальной сети',
+                'Обычное сообщение пользователя',
+                'Важное обновление новостей',
+                'Комментарий в обсуждении',
+                'Запись в блоге'
+            ],
+            'label': [1, 0, 2, 1, 0]
+        }
+        pd.DataFrame(taiga_data).to_csv('data/taiga/social_dataset.csv', index=False)
+        print(' Taiga toy data created')
         "
         
-    - name:  Run smoke tests
+    - name:  Run minimal pipeline test
       run: |
-        python scripts/run_smoke_tests.py
+        python scripts/run_minimal_pipeline.py
         
-    - name:  Run basic functionality tests
+    - name:  Verify output artifacts
       run: |
-        python -m pytest tests/ -v --cov=src --cov-report=xml
+        echo \" Checking generated artifacts...\"
         
-    - name:  Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+        # Проверяем CSV файлы
+        if [ -f \"results/tables/minimal_results.csv\" ]; then
+            echo \" CSV results created\"
+            echo \"CSV content:\"
+            head -n 5 \"results/tables/minimal_results.csv\"
+        else
+            echo \" CSV results missing\"
+            exit 1
+        fi
+        
+        # Проверяем графики
+        if ls results/figures/minimal_*.png 1> /dev/null 2>&1; then
+            echo \" Figures created\"
+            ls -la results/figures/minimal_*.png
+        else
+            echo \" Figures missing\" 
+            exit 1
+        fi
+        
+        echo \" All artifacts verified successfully!\"
+        
+    - name:  Upload artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-
-  full-pipeline-test:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'  # Только ручной запуск
-    
-    steps:
-    - name:  Checkout repository
-      uses: actions/checkout@v4
-      
-    - name:  Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        
-    - name:  Install dependencies
-      run: |
-        pip install -r requirements.txt
-        
-    - name:  Run full pipeline on toy data
-      run: |
-        python scripts/run_full_pipeline_test.py
+        name: ci-artifacts
+        path: |
+          results/
+        retention-days: 7

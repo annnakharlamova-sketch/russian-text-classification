@@ -31,6 +31,110 @@ from utils import setup_reproducibility
 setup_reproducibility(seed=42)  # Установка глобального seed
 ```
 
+## Методология эксперимента
+
+### Протокол оценки
+
+Для обеспечения статистической достоверности результатов используется следующий протокол:
+
+#### Фиксация Random Seed
+```python
+# Глобальная установка seed=42 для всех компонентов
+from utils import setup_reproducibility
+setup_reproducibility(seed=42)
+```
+#### Затронутые компоненты:
+
+Python `random` модуль
+
+NumPy генератор случайных чисел
+
+PyTorch (веса моделей, DataLoader)
+
+Scikit-learn (разделение данных, CV)
+
+Инициализация эмбеддингов
+
+#### 5-кратная стратифицированная кросс-валидация
+
+**Реализация:** `StratifiedKFold` из scikit-learn
+
+**Параметры:**
+
+```python
+from utils import create_stratified_cv
+
+cv = create_stratified_cv(
+    n_splits=5,           # 5 фолдов
+    shuffle=True,         # перемешивание данных
+    random_state=42       # фиксированный seed
+)
+```
+**Особенности:**
+
+* Сохранение распределения классов в каждом фолде
+
+* Стратификация по целевой переменной
+
+* Фиксированное разбиение для воспроизводимости
+
+####  Расчет 95% доверительных интервалов методом перцентильного бутстрэпа
+
+**Алгоритм:**
+1. **Вход**: Результаты кросс-валидации (5 значений метрики)
+2. **Генерация выборок**: 1000 бутстрэп-выборок с возвращением
+3. **Расчет статистики**: Для каждой выборки вычисляется среднее значение метрики
+4. **Определение перцентилей**: 
+   - Нижняя граница ДИ: 2.5% перцентиль
+   - Верхняя граница ДИ: 97.5% перцентиль
+
+**Код реализации:**
+```python
+def calculate_bootstrap_ci(scores, n_bootstrap=1000, confidence=0.95):
+    bootstrap_samples = []
+    for _ in range(n_bootstrap):
+        # Выборка с возвращением
+        sample = np.random.choice(scores, size=len(scores), replace=True)
+        bootstrap_samples.append(np.mean(sample))
+    
+    alpha = (1 - confidence) / 2
+    lower = np.percentile(bootstrap_samples, alpha * 100)
+    upper = np.percentile(bootstrap_samples, (1 - alpha) * 100)
+    return lower, upper
+```
+
+**Интерпретация:**
+
+"95% ДИ [0.845-0.859]" означает, что в 95% случаев истинное значение метрики попадает в этот интервал
+
+### Формат результатов
+Результаты сохраняются в `results/evaluation_results.csv`:
+
+```csv
+dataset,model,preprocess,seed,accuracy,accuracy_ci_lower,accuracy_ci_upper,
+precision_macro,recall_macro,f1_macro,f1_macro_ci_lower,f1_macro_ci_upper,
+samples_count
+```
+**Пример записи:**
+
+```csv
+rusentiment,tfidf_svm,P0,42,0.852,0.845,0.859,0.851,0.852,0.851,0.844,0.858,38000
+```
+### Проверка реализации
+```bash
+python src/utils.py
+```
+
+#### Ожидаемый вывод:
+
+```text
+Тест воспроизводимости...
+Random seed установлен глобально: 42
+NumPy random: [0.37454012 0.95071431 0.73199394]  # Должен совпадать
+PyTorch random: tensor([0.88226926, 0.91500396, 0.38286376])  # Должен совпадать
+Тест воспроизводимости завершен!
+```
+
 ##  Оборудование и параметры моделей
 
 ###  Оборудование для экспериментов
@@ -56,15 +160,17 @@ C: 1.0                          # Параметр регуляризации
 ngram_range: [1, 2]             # Униграммы + биграммы
 max_features: 20000             # Размер словаря
 min_df: 3                       # Минимальная частота термина
-BoW + Logistic Regression (configs/model_logreg.yml)
-yaml
+```
+#### BoW + Logistic Regression (`configs/model_logreg.yml`)
+
+```yaml
 solver: "lbfgs"                 # Алгоритм оптимизации
 max_iter: 1000                  # Максимум итераций
 ngram_range: [1, 2]             # Униграммы + биграммы  
 max_features: 10000             # Размер словаря
 min_df: 5                       # Минимальная частота термина
 ```
-LSTM (configs/model_lstm.yml)
+#### LSTM (configs/model_lstm.yml)
 ```yaml
 embedding_dim: 200              # Размер эмбеддингов
 hidden_size: 128                # Размер скрытого слоя
@@ -168,41 +274,6 @@ python run_experiments.py --dataset rusentiment --model tfidf_svm --preprocess p
 
 # Результат: results/rusentiment_tfidf_svm_p3_seed42.csv
 ```
-
-## Протокол оценки
-
-### Методология
-
-**Кросс-валидация:**
-- 5-кратная стратифицированная кросс-валидация
-- Усреднение метрик по всем фолдам
-- Random seed = 42 для воспроизводимости
-
-**Доверительные интервалы:**
-- 95% доверительные интервалы методом перцентильного бутстрэпа
-- 1000 бутстрэп выборок для каждой оценки
-- Расчет для Accuracy и F1-macro
-
-**Метрики:**
-- Accuracy (точность)
-- Precision (точность), macro averaging
-- Recall (полнота), macro averaging  
-- F1-score, macro averaging
-
-### Формат результатов
-
-Результаты сохраняются в `results/evaluation_results.csv` со следующими полями:
-
-```csv
-dataset,model,preprocess,seed,accuracy,accuracy_ci_lower,accuracy_ci_upper,
-precision_macro,recall_macro,f1_macro,f1_macro_ci_lower,f1_macro_ci_upper,
-samples_count
-```
-
-Пример записи:
-
-csv
-rusentiment,tfidf_svm,P0,42,0.852,0.845,0.859,0.851,0.852,0.851,0.844,0.858,38000
 
 ## Воспроизведение таблиц статьи
 ```bash
@@ -341,12 +412,12 @@ russian-text-classification/
 │ │ └──  validation.csv # Пример: "text", "sentiment"
 │ ├──  rureviews/
 │ │ └──  reviews.csv # Пример: "text", "label"
-│ └──  taiga_extracted/
-│ └──  social_dataset.csv # Пример: "text", "label"
+│ └──  taiga/
+└─└── └──social_dataset.csv
 ├──  configs/
 │ ├──  experiment_config.yaml # Основные настройки
 │ ├──  model_svm.yml # Конфиг TF-IDF + SVM
-│ └──  preprocess_p0.yaml # Пайплайн базовой очистки
+│ └──  preprocess_p0.yml # Пайплайн базовой очистки
 ├──  src/ # Исходный код
 │ ├──  data_preprocessing.py # Предобработка P0-P3
 │ ├──  models.py # BoW+LogReg, TF-IDF+SVM
@@ -516,7 +587,6 @@ cd releases/v1.0-article/ && zip -r v1.0-article_artifacts.zip artifacts/
 ##  Воспроизводимость и CI
 
 [![Russian Text Classification CI](https://github.com/annnakharlamova-sketch/russian-text-classification/actions/workflows/python-app.yml/badge.svg)](https://github.com/annnakharlamova-sketch/russian-text-classification/actions/workflows/python-app.yml)
-[![codecov](https://codecov.io/gh/annnakharlamova-sketch/russian-text-classification/branch/main/graph/badge.svg)](https://codecov.io/gh/annnakharlamova-sketch/russian-text-classification)
 
 ###  Проверено CI
 

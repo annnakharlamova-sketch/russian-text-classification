@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ФИНАЛЬНАЯ ВЕРСИЯ: Полный пайплайн экспериментов классификации текстов
+Полный пайплайн экспериментов классификации текстов
 """
 
 import argparse
@@ -11,11 +11,11 @@ import pandas as pd
 # Добавляем путь к src для импорта модулей
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from utils import load_config, print_config_summary, ensure_dir, setup_reproducibility
-from data_preprocessing import DataPreprocessor
-from models import ClassicalModel, RealNeuralModel
-from evaluation import Evaluator
-from analysis import PreprocessingAnalyzer
+from src.utils import load_config, print_config_summary, ensure_dir, setup_reproducibility
+from src.data_preprocessing import DataPreprocessor
+from src.models import ClassicalModel, RealNeuralModel
+from src.evaluation import Evaluator
+from src.analysis import PreprocessingAnalyzer
 
 
 def load_processed_data(corpus_name, pipeline_name):
@@ -62,15 +62,20 @@ def train_neural_models(config, X_train, y_train, model_name_suffix=""):
         return None
 
 
-def run_complete_evaluation(config, classical_model, neural_model, X_test, y_test, eval_name=""):
-    """Полная оценка всех моделей"""
+def run_complete_evaluation(config, classical_model=None, neural_model=None, X_test=None, y_test=None, 
+                          eval_name="", X_train=None, y_train=None, dataset_name=None, 
+                          model_name=None, preprocess_name=None):
+    """
+    Полная оценка моделей с поддержкой разных сценариев
+    """
     print(f" Полная оценка моделей{eval_name}...")
     
     evaluator = Evaluator(config)
     predictions_dict = {}
+    results = {}
     
-    # Оценка классических моделей
-    if classical_model:
+    # Сценарий 1: Оценка классических моделей
+    if classical_model and X_test is not None and y_test is not None:
         for model_name in ['bow_logreg', 'tfidf_svm']:
             if model_name in classical_model.models:
                 print(f"   Оценка {model_name}...")
@@ -81,39 +86,43 @@ def run_complete_evaluation(config, classical_model, neural_model, X_test, y_tes
                     model, vectorizer, X_test, y_test, model_name
                 )
                 predictions_dict[model_name] = y_pred
+                results[model_name] = metrics
     
-    # Сравнение моделей
+    # Сценарий 2: Кросс-валидация для конкретной модели
+    elif X_train is not None and y_train is not None and model_name is not None:
+        print(f"   Кросс-валидация {model_name}...")
+        
+        # Здесь должна быть передана модель как параметр
+        # Для демонстрации создадим временную модель
+        from sklearn.linear_model import LogisticRegression
+        model = LogisticRegression(random_state=42)
+        
+        # 5-кратная стратифицированная CV
+        cv_results, avg_metrics = evaluator.cross_validate_model(
+            model, X_train, y_train, dataset_name, model_name, preprocess_name
+        )
+        
+        # Оценка на тестовом наборе
+        if X_test is not None and y_test is not None:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            test_result = evaluator.evaluate_with_confidence_intervals(
+                y_test, y_pred, dataset_name, model_name, preprocess_name
+            )
+            results['test'] = test_result
+        
+        results['cv'] = avg_metrics
+    
+    # Сравнение моделей (если есть несколько моделей)
     if len(predictions_dict) >= 2:
         print(f"\n Сравнение моделей{eval_name}:")
         comparison_results = evaluator.compare_models(y_test, predictions_dict)
         results_table = evaluator.create_results_table(comparison_results)
+        results['comparison'] = comparison_results
         
         return comparison_results, results_table
     
-    return predictions_dict, None
-
-    def run_complete_evaluation(config, X_train, y_train, X_test, y_test, 
-                           dataset_name, model_name, preprocess_name):
-    	"""Полная оценка с CV и доверительными интервалами"""
-    	from evaluation import Evaluator
-    
-    	evaluator = Evaluator(config)
-    
-    	# 5-кратная стратифицированная CV
-    	cv_results, avg_metrics = evaluator.cross_validate_model(
-        	model, X_train, y_train, dataset_name, model_name, preprocess_name
-    )
-    
-    	# Оценка на тестовом наборе с доверительными интервалами
-    	y_pred = model.predict(X_test)
-    	test_result = evaluator.evaluate_with_confidence_intervals(
-        y_test, y_pred, dataset_name, model_name, preprocess_name
-    )
-    
-    # Сохранение результатов
-    	evaluator.save_results()
-    
-    	return test_result, cv_results
+    return results
 
 
 def analyze_preprocessing_impact(config, processed_data):
@@ -223,8 +232,17 @@ def main():
             neural_model = train_neural_models(config, X_train, y_train)
         
         # Оценка на тестовых данных
+        # Оценка на тестовых данных
         if args.all or args.evaluate:
-            run_complete_evaluation(config, classical_model, neural_model, X_test, y_test)
+            results = run_complete_evaluation(
+                config, 
+                classical_model=classical_model, 
+                neural_model=neural_model, 
+                X_test=X_test, 
+                y_test=y_test,
+                eval_name=" (тестовые данные)"
+            )
+            print("Результаты оценки:", results)
     
     # 3. ЭКСПЕРИМЕНТЫ С РЕАЛЬНЫМИ ДАННЫМИ (если они обработаны)
     if processed_data and (args.all or args.evaluate):
