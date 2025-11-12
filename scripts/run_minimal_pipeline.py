@@ -103,8 +103,8 @@ def create_minimal_results():
     results_df = pd.DataFrame(results_data)
     
     # Сохраняем
-    Path('results/tables').mkdir(parents=True, exist_ok=True)
-    results_df.to_csv('results/tables/minimal_results.csv', index=False)
+    Path('results').mkdir(parents=True, exist_ok=True)
+    results_df.to_csv('results/minimal_results.csv', index=False)
     
     print(f" Минимальные результаты сохранены: {len(results_df)} записей")
     return results_df
