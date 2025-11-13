@@ -77,6 +77,54 @@ def setup_dataloader_seed(dataloader, seed=None):
     
     return dataloader
 
+def load_config_with_includes(config_path):
+    """
+    Загрузка конфигурации с поддержкой вложенных конфигов
+    
+    Args:
+        config_path (str): Путь к основному конфигу
+        
+    Returns:
+        dict: Объединенная конфигурация
+    """
+    import yaml
+    
+    def _load_nested_configs(config_dict, base_dir):
+        """Рекурсивная загрузка вложенных конфигов"""
+        if isinstance(config_dict, dict):
+            for key, value in list(config_dict.items()):
+                if isinstance(value, str) and value.endswith(('.yaml', '.yml')):
+                    # Загружаем вложенный конфиг
+                    nested_path = os.path.join(base_dir, value)
+                    if os.path.exists(nested_path):
+                        print(f"  Загружаем вложенный конфиг: {nested_path}")
+                        nested_config = load_config_with_includes(nested_path)
+                        config_dict[key] = nested_config
+                    else:
+                        print(f"   Вложенный конфиг не найден: {nested_path}")
+                elif isinstance(value, (dict, list)):
+                    _load_nested_configs(value, base_dir)
+        elif isinstance(config_dict, list):
+            for i, item in enumerate(config_dict):
+                if isinstance(item, str) and item.endswith(('.yaml', '.yml')):
+                    nested_path = os.path.join(base_dir, item)
+                    if os.path.exists(nested_path):
+                        config_dict[i] = load_config_with_includes(nested_path)
+                elif isinstance(item, (dict, list)):
+                    _load_nested_configs(item, base_dir)
+        return config_dict
+    
+    print(f" Загрузка конфигурации: {config_path}")
+    
+    # Загружаем основной конфиг
+    config = load_config(config_path)
+    base_dir = os.path.dirname(config_path)
+    
+    # Загружаем вложенные конфиги
+    config = _load_nested_configs(config, base_dir)
+    
+    print(f" Конфигурация загружена: {len(config)} секций")
+    return config
 
 def create_stratified_cv(n_splits=5, shuffle=True, random_state=None):
     """
@@ -238,10 +286,58 @@ def print_config_summary(config):
     """Вывод краткой информации о конфигурации"""
     print("Конфигурация эксперимента:")
     print(f"   Random seed: {GLOBAL_SEED}")
-    print(f"   Корпусы: {list(config['data']['corpora'].keys())}")
-    print(f"   Пайплайны: {list(config['preprocessing']['pipelines'].keys())}")
-    print(f"   Модели: {list(config['models']['classical'].keys())} + LSTM")
-    print(f"   Метрики: {config['evaluation']['metrics']}")
+    
+    # Адаптируемся к разным структурам конфигов
+    try:
+        # Для новой структуры (configs/main.yaml)
+        if 'datasets' in config:
+            datasets = list(config['datasets'].keys()) if isinstance(config['datasets'], dict) else config['datasets']
+            print(f"   Корпусы: {datasets}")
+        # Для старой структуры (configs/experiment_config.yaml)  
+        elif 'data' in config and 'corpora' in config['data']:
+            print(f"   Корпусы: {list(config['data']['corpora'].keys())}")
+        else:
+            print(f"   Корпусы: информация не найдена")
+    except Exception as e:
+        print(f"   Корпусы: ошибка загрузки - {e}")
+    
+    try:
+        # Для новой структуры
+        if 'preprocessing' in config and 'pipelines' in config['preprocessing']:
+            pipelines = list(config['preprocessing']['pipelines'].keys()) if isinstance(config['preprocessing']['pipelines'], dict) else config['preprocessing']['pipelines']
+            print(f"   Пайплайны: {pipelines}")
+        # Для старой структуры
+        elif 'preprocessing' in config and 'pipelines' in config['preprocessing']:
+            print(f"   Пайплайны: {list(config['preprocessing']['pipelines'].keys())}")
+        else:
+            print(f"   Пайплайны: информация не найдена")
+    except Exception as e:
+        print(f"   Пайплайны: ошибка загрузки - {e}")
+    
+    try:
+        # Для новой структуры
+        if 'models' in config and 'classical' in config['models']:
+            models = list(config['models']['classical'].keys()) if isinstance(config['models']['classical'], dict) else config['models']['classical']
+            print(f"   Модели: {models} + LSTM")
+        # Для старой структуры
+        elif 'models' in config and 'classical' in config['models']:
+            print(f"   Модели: {list(config['models']['classical'].keys())} + LSTM")
+        else:
+            print(f"   Модели: информация не найдена")
+    except Exception as e:
+        print(f"   Модели: ошибка загрузки - {e}")
+    
+    try:
+        # Для новой структуры
+        if 'evaluation' in config and 'metrics' in config['evaluation']:
+            print(f"   Метрики: {config['evaluation']['metrics']}")
+        # Для старой структуры
+        elif 'evaluation' in config and 'metrics' in config['evaluation']:
+            print(f"   Метрики: {config['evaluation']['metrics']}")
+        else:
+            print(f"   Метрики: информация не найдена")
+    except Exception as e:
+        print(f"   Метрики: ошибка загрузки - {e}")
 
 
 def setup_reproducibility(seed=42):
@@ -331,7 +427,7 @@ def save_experiment_results(results_dict, filename=None, results_dir="results"):
     else:
         df.to_csv(filepath, index=False, encoding='utf-8')
     
-    print(f"✅ Результаты сохранены: {filepath}")
+    print(f" Результаты сохранены: {filepath}")
     return filepath
 
 
@@ -348,7 +444,7 @@ def load_all_results(results_dir="results"):
     all_results = []
     
     if not os.path.exists(results_dir):
-        print(f"⚠️ Директория результатов не найдена: {results_dir}")
+        print(f" Директория результатов не найдена: {results_dir}")
         return pd.DataFrame()
     
     for file in os.listdir(results_dir):
@@ -357,16 +453,16 @@ def load_all_results(results_dir="results"):
             try:
                 df = pd.read_csv(filepath, encoding='utf-8')
                 all_results.append(df)
-                print(f"📊 Загружено: {file} ({len(df)} строк)")
+                print(f" Загружено: {file} ({len(df)} строк)")
             except Exception as e:
-                print(f"❌ Ошибка загрузки {file}: {e}")
+                print(f" Ошибка загрузки {file}: {e}")
     
     if all_results:
         combined_df = pd.concat(all_results, ignore_index=True)
-        print(f"📈 Всего результатов: {len(combined_df)} строк")
+        print(f" Всего результатов: {len(combined_df)} строк")
         return combined_df
     else:
-        print("📭 Нет результатов для загрузки")
+        print(" Нет результатов для загрузки")
         return pd.DataFrame()
 
 

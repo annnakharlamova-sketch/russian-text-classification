@@ -1,0 +1,22 @@
+# configs/datasets/taiga.yaml
+name: "taiga_social"
+description: "Taiga Social Media Dataset - русские социальные медиа"
+type: "classification" 
+language: "russian"
+
+loading:
+  path: "data/taiga/"
+  format: "csv"
+  text_column: "text"
+  label_column: "label"
+  encoding: "utf-8"
+
+labels:
+  0: "negative"
+  1: "positive"
+  2: "neutral"
+
+statistics:
+  expected_size: 50000
+  classes: 3
+  balanced: true

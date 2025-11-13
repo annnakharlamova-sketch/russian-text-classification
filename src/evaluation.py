@@ -10,7 +10,7 @@ from scipy import stats
 import time
 import os
 from pathlib import Path  
-from src.utils import get_global_seed
+from utils import get_global_seed
 
 
 class Evaluator:
@@ -18,6 +18,23 @@ class Evaluator:
         self.config = config
         self.results = []
         self.cv_results = []  
+
+    def evaluate_classical_model(self, model, X_test, y_test):
+        """Оценка классической модели"""
+        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+        print(f"   Оценка модели: {model.model_name}")
+        y_pred = model.predict(X_test)
+
+        metrics = {
+            "accuracy": accuracy_score(y_test, y_pred),
+            "precision_macro": precision_score(y_test, y_pred, average='macro', zero_division=0),
+            "recall_macro": recall_score(y_test, y_pred, average='macro', zero_division=0),
+            "f1_macro": f1_score(y_test, y_pred, average='macro', zero_division=0)
+        }
+
+        print(f"   Метрики: {metrics}")
+        return metrics, y_pred
         
     def bootstrap_ci(self, y_true, y_pred, metric_fn, n_bootstrap=1000, confidence=0.95):
         """

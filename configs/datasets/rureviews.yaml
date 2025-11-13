@@ -1,0 +1,19 @@
+# configs/datasets/rureviews.yaml
+name: "rureviews"
+description: "Russian reviews dataset"
+type: "classification"
+
+loading:
+  path: "data/rureviews/reviews.csv"
+  format: "csv"
+  text_column: "text"
+  label_column: "label"
+
+preprocessing:
+  encoding: "utf-8"
+  language: "russian"
+
+labels:
+  0: "negative"
+  1: "positive"
+  2: "neutral"

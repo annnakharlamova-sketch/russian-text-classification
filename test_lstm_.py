@@ -6,8 +6,8 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from neural_models import FixedNeuralModel
-from utils import load_config
+from src.neural_models import FixedNeuralModel
+from src.utils import load_config
 
 def main():
     print(" Тестирование исправленной LSTM модели...")

@@ -1,0 +1,14 @@
+# configs/datasets/rusentiment.yaml  
+name: "rusentiment"
+description: "Russian sentiment analysis dataset"
+type: "classification"
+
+loading:
+  path: "data/rusentiment/"
+  format: "jsonl"
+  text_column: "text"
+  label_column: "label"
+
+preprocessing:
+  encoding: "utf-8"
+  language: "russian"
