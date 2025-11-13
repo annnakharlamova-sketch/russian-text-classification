@@ -1,28 +1,72 @@
-name: russian-text-classification
-channels:
-  - conda-forge
-  - pytorch
-  - defaults
-dependencies:
-  - python=3.10.2  
-  - pip=23.1.2
-  - numpy=1.24.3
-  - pandas=2.0.3
-  - scikit-learn=1.4.2
-  - scipy=1.10.1
-  - matplotlib=3.7.1
-  - seaborn=0.12.2
-  - jupyter=1.0.0
-  - tqdm=4.65.0
-  - pyyaml=6.0.1
-  - ipython=8.12.0  
-  - requests=2.31.0  
-  - pytest=7.4.0  
-  - pytest-cov=4.1.0  
-  - pip:
-    - torch==2.2.1
-    - torchvision==0.17.1
-    - razdel==0.5.0
-    - pymorphy2==0.9.1
-    - pymorphy2-dicts-ru==2.4.417127.4579844
-    - datasets==2.14.5
+
+# Главный конфигурационный файл проекта
+
+default:
+  random_seed: 42
+  language: "russian"
+
+data:
+  corpora:
+    rureviews: 
+      name: "Russian Reviews"
+      path: "data/rureviews/reviews.csv"
+      text_column: "text"
+      label_column: "label"
+    rusentiment:
+      name: "Russian Sentiment" 
+      path: "data/rusentiment/train.csv"
+      text_column: "text"
+      label_column: "sentiment"
+    taiga_social:
+      name: "Taiga Social"
+      path: "data/taiga/"
+      text_column: "text"
+      label_column: "label"
+
+preprocessing:
+  pipelines:
+    P0:
+      name: "Базовая предобработка"
+      steps: ["lowercase", "remove_punctuation"]
+    P1:
+      name: "Со стеммингом"
+      steps: ["lowercase", "remove_punctuation", "stemming"]
+    P2:
+      name: "С лемматизацией"
+      steps: ["lowercase", "remove_punctuation", "lemmatization"]
+    P3:
+      name: "Комплексная"
+      steps: ["lowercase", "remove_punctuation", "lemmatization", "remove_stopwords"]
+
+models:
+  classical:
+    bow_logreg:
+      name: "BOW + Logistic Regression"
+      vectorizer: "count"
+      classifier: "logistic_regression"
+    tfidf_svm:
+      name: "TF-IDF + SVM"
+      vectorizer: "tfidf" 
+      classifier: "svm"
+  neural:
+    lstm:
+      name: "LSTM"
+      embedding_dim: 100
+      hidden_dim: 128
+
+evaluation:
+  cv_folds: 5
+  test_size: 0.2
+  bootstrap_samples: 1000
+  confidence_interval: 0.95
+  metrics: 
+    - "accuracy"
+    - "precision_macro"
+    - "recall_macro"
+    - "f1_macro"
+
+paths:
+  data: "data/"
+  processed: "processed_data/"
+  results: "results/"
+  models: "trained_models/"

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-print("=== ЭТАП 5: ФИНАЛЬНЫЙ АНАЛИЗ РЕЗУЛЬТАТОВ ===")
+print("ЭТАП 5: ФИНАЛЬНЫЙ АНАЛИЗ РЕЗУЛЬТАТОВ")
 
 # Загружаем результаты
 results_path = "results/all_models_evaluation.csv"

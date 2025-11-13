@@ -14,7 +14,7 @@ import time
 print("ОЦЕНКА И СРАВНЕНИЕ ВСЕХ МОДЕЛЕЙ")
 
 # Загружаем конфиг
-config = yaml.safe_load(open('configs/experiment_config.yaml', 'r', encoding='utf-8'))
+config = yaml.safe_load(open('configs/experiments/main.yaml', 'r', encoding='utf-8'))
 
 # Создаем папку для результатов
 results_dir = "results"
