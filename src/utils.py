@@ -1,7 +1,7 @@
 """
 Вспомогательные функции для обеспечения воспроизводимости
 """
-import datetime
+from datetime import datetime
 import os
 import yaml
 import pandas as pd

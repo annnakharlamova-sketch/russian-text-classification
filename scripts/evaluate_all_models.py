@@ -1,8 +1,8 @@
 import sys
 sys.path.append('src')
 
-from src.utils import save_experiment_results
-from src.evaluation import Evaluator
+from utils import save_experiment_results
+from evaluation import Evaluator
 import yaml
 import pandas as pd
 import os
@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 import pickle
 import numpy as np
 import time
+from datetime import datetime
 
 print("ОЦЕНКА И СРАВНЕНИЕ ВСЕХ МОДЕЛЕЙ")
 
